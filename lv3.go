@@ -16,11 +16,14 @@ func filter(in, out chan int, prime int) {
 func main() {
 	ch := make(chan int)
 	go generate(ch)
-	for i1:=0;i1<100;i1++{
+	for {
 		prime := <-ch
 		fmt.Print(prime, " ")
 		ch1 := make(chan int)
 		go filter(ch, ch1, prime)
 		ch = ch1
+		if prime>1000{
+			break
+		}
 	}
 }
