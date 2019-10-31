@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 )
-func factorial(n int,ch chan int) {
+
+func factorial(n int, ch chan int) {
 	var res = 1
 	for i := 1; i <= n; i++ {
 		res *= i
 	}
-	ch<-res
+	ch <- res
 }
 func main() {
 	ch := make(chan int)
@@ -19,9 +20,9 @@ func main() {
 		}
 	}()
 	go func() {
-	for i := range ch {
-		fmt.Println(i)
-	}
-}()
-time.Sleep(2e9)
+		for i := range ch {
+			fmt.Println(i)
+		}
+	}()
+	time.Sleep(2e9)
 }

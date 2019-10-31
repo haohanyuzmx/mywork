@@ -1,28 +1,33 @@
 package main
-import "fmt"
-func generate(ch chan int) {
-	for i2 := 2; ; i2++ {
-		ch <- i2
-	}
-}
-func filter(in, out chan int, prime int) {
-	for {
-		i := <-in
-		if i%prime != 0 {
-			out <- i
+
+import ("fmt"
+	"time"
+)
+var ch =make(chan int)
+var i int
+func caculate() (){
+	i = <-ch
+	for ; ; i++ {
+		ok:=0
+		for c := 2; c < i; c++ {
+			if i%c == 0 {
+				ok=1
+				break
+			}
+
+		}
+		if ok==0 {
+			fmt.Println(i)
+			ch<-i
 		}
 	}
 }
 func main() {
-	ch := make(chan int)
-	go generate(ch)
-	for {
-		prime := <-ch
-		fmt.Print(prime, " ")
-		ch1 := make(chan int)
-		go filter(ch, ch1, prime)
-		ch = ch1
-		if prime>1000{
+	go func() {ch<-2}()
+	for   {
+		go caculate()
+		time.Sleep(1)
+		if i>1000 {
 			break
 		}
 	}
