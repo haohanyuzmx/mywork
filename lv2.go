@@ -2,27 +2,26 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
-func factorial(n int, ch chan int) {
-	var res = 1
-	for i := 1; i <= n; i++ {
-		res *= i
-	}
-	ch <- res
-}
 func main() {
-	ch := make(chan int)
-	go func() {
-		for i := 1; i <= 20; i++ {
-			factorial(i, ch)
-		}
-	}()
-	go func() {
-		for i := range ch {
-			fmt.Println(i)
-		}
-	}()
-	time.Sleep(2e9)
+	timeLayout := "2006-01-02 15:04:05"
+	var slice []int64
+HAHA:
+	var timestamp string
+	fmt.Scanf("%s", &timestamp)
+	if timestamp == "result" {
+		goto HEHE
+	} else {
+		c, _ := strconv.ParseInt(timestamp, 10, 64)
+		slice = append(slice, c)
+		goto HAHA
+	}
+HEHE:
+	for _, v := range slice {
+		datetime := time.Unix(v, 0).Format(timeLayout)
+		fmt.Println(datetime)
+	}
 }
