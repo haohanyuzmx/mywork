@@ -29,10 +29,10 @@ type Client struct {
 	Roomid    string
 }
 type Message struct {
-	Roomid    string `json:"roomid,omitempty"`
-	Sender    string `json:"sender,omitempty"`
-	Recipient string `json:"recipient,omitempty"`
-	Content   string `json:"content,omitempty"`
+	Roomid    string `json:"roomid"`
+	Sender    string `json:"sender"`
+	Recipient string `json:"recipient"`
+	Content   string `json:"content"`
 	Types     string `json:"types"` //types=1表示下棋，2表示说话
 }
 
@@ -43,7 +43,7 @@ var Manager = ClientManager{
 	Clients:    make(map[*Client]bool),
 }
 
-// Start is  项目运行前, 协程开启start -> go Manager.Start()
+// Start 项目运行前, 协程开启start -> go Manager.Start()
 func (manager *ClientManager) Start() {
 	for {
 		log.Println("<---管道通信--->")
@@ -76,7 +76,7 @@ func (manager *ClientManager) Start() {
 		}
 	}
 }
-
+//judge判读五子棋胜负
 func judge(ma [16][16]int) int {
 	var dir = [8][2]int{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 	for i := 1; i <= 15; i++ {
@@ -98,7 +98,6 @@ func judge(ma [16][16]int) int {
 
 // Send is to send ws message to ws client
 func (manager *ClientManager) Send(message []byte, ignore *Client) {
-
 	for conn := range manager.Clients {
 		if conn != ignore { //向除了自己的socket 用户发送
 			conn.Send <- message
@@ -117,11 +116,14 @@ func (c *Client) Read() {
 		if err != nil {
 			Manager.Unregister <- c
 			c.Socket.Close()
-			fmt.Println(err, "121行")
+			log.Println(err, "121行")
 			break
 		}
 		me := string(message)
 		m := strings.Split(me, "+")
+		if len(m)<2 {
+			m=append(m,"2")
+		}
 		if m[0] == "2" {
 			if m[1] == "认输" {
 				m[1] = c.ID + "输了"
@@ -146,7 +148,7 @@ func (c *Client) Read() {
 			}
 			conn := fundation.Pool.Get()
 			if t, _ := conn.Do("zrank", c.Roomid+"+chess", m[1]); t != nil {
-				m[1] = "请不要乱下棋"
+				m[1] = "此步已下"
 				m[0] = "2"
 				goto MESS
 			}
@@ -154,7 +156,7 @@ func (c *Client) Read() {
 			if err != nil {
 				Manager.Unregister <- c
 				c.Socket.Close()
-				fmt.Println(err, "147行")
+				log.Println(err, "147行")
 				break
 			}
 			isMem := 0
@@ -261,11 +263,13 @@ func TestHandler(c *gin.Context) {
 		return
 	}
 	//可以添加用户信息验证
-	userID, err := c.Cookie("username")
-	var roomid string
-	if roomid, err = c.Cookie("roomid"); err != nil {
-		roomid = c.DefaultQuery("roomid", "0")
-	}
+	//userID, err := c.Cookie("username")
+	//var roomid string
+	//if roomid, err = c.Cookie("roomid"); err != nil {
+	//	roomid = c.DefaultQuery("roomid", "0")
+	//}
+	userID:=c.Query("username")
+	roomid:=c.Query("roomid")
 	recip := c.DefaultQuery("recipient", "-1")
 	client := &Client{
 		Recipient: recip,

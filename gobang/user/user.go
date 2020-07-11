@@ -1,16 +1,17 @@
 package user
 
 import (
-	"fmt"
+	"errors"
 	"github.com/gin-gonic/gin"
 	fundation "gobang"
+	"log"
 )
 
 type Userinfor struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-
+//Login通过json读取信息并查询数据库，若成功设置cookie保存登录状态
 func Login(ctx *gin.Context) {
 	var uinf Userinfor
 	err := ctx.ShouldBindJSON(&uinf)
@@ -20,15 +21,16 @@ func Login(ctx *gin.Context) {
 	var u fundation.User
 	err = fundation.DB.Where(&fundation.User{Username: uinf.Username, Password: uinf.Password}).First(&u).Error
 	if u.ID == 0 {
-		ctx.JSON(200, gin.H{
-			"code": 500,
-			"mess": "错误",
-		})
-		fmt.Println(err)
+		wrongSend(ctx,err,"账号密码出错")
 		return
 	}
-	ctx.SetCookie("username", u.Username, 10, "/", "localhost", false, true)
+	ctx.SetCookie("username", u.Username, 600, "/", "localhost", false, true)
+	ctx.JSON(200, gin.H{
+		"code": 200,
+		"mess": "成功",
+	})
 }
+//Register通过json读取信息并查询数据库，不冲突则写入数据库
 func Register(ctx *gin.Context) {
 	var uinf Userinfor
 	err := ctx.ShouldBindJSON(&uinf)
@@ -36,13 +38,14 @@ func Register(ctx *gin.Context) {
 		return
 	}
 	var u fundation.User
+	if !fundation.DB.HasTable(&u){
+		fundation.DB.CreateTable(&u)
+	}
 	u.Username = uinf.Username
-	fundation.DB.Where("username", uinf.Username).First(&u)
+	fundation.DB.Table("users").Where("username=?", uinf.Username).First(&u)
 	if u.ID != 0 {
-		ctx.JSON(200, gin.H{
-			"Code": 500,
-			"mess": "账号重合",
-		})
+		err=errors.New("账号重复")
+		wrongSend(ctx,err,"账号重复")
 		return
 	}
 	u.Password = uinf.Password
@@ -56,10 +59,10 @@ func Register(ctx *gin.Context) {
 func wrongSend(ctx *gin.Context, err error, mess string) bool {
 	if err != nil {
 		ctx.JSON(200, gin.H{
-			"Code": 500,
+			"Code": 001,
 			"mess": mess,
 		})
-		fmt.Println(err)
+		log.Println(err)
 		return true
 	}
 	return false

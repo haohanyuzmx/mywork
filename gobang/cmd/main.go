@@ -6,8 +6,8 @@ import (
 )
 
 func main()  {
-
 	r:=gin.Default()
 	user.Chess(r)
+	user.User(r)
 	r.Run()
 }
